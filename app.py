@@ -20,15 +20,31 @@ def get_access_token():
 def recognize_image(image):
     token = get_access_token()
     if not token:
-        return None, "API获取失败"
+        return None, "API获取失败，请检查API Key"
+    
+    from io import BytesIO
+    import base64
+    
+    # 压缩图片
+    img = image.resize((500, int(image.height * 500 / image.width)))
     buf = BytesIO()
-    image.save(buf, format='JPEG')
+    img.save(buf, format='JPEG', quality=80)
     img_base64 = base64.b64encode(buf.getvalue()).decode()
+    
     url = f"https://aip.baidubce.com/rest/2.0/image-classify/v2/advanced_general?access_token={token}"
+    payload = f"image={img_base64}"
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    data = {"image": img_base64}
-    response = requests.post(url, headers=headers, data=data)
-    return response.json(), None
+    
+    try:
+        response = requests.post(url, headers=headers, data=payload, timeout=10)
+        result = response.json()
+        
+        # 打印调试信息
+        st.write("API返回：", result)
+        
+        return result, None
+    except Exception as e:
+        return None, str(e)
 
 GARBAGE_DB = {
     "塑料瓶": {"类别": "可回收物", "图标": "🥤", "处理": "清空液体 → 压扁 → 投入蓝色可回收桶", "原因": "塑料可以回收重新制成新的塑料制品", "标语": "塑料回收一小步，绿色地球一大步！"},

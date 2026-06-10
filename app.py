@@ -31,7 +31,7 @@ def recognize_image(image):
                         "role": "user",
                         "content": [
                             {"image": f"data:image/jpeg;base64,{img_base64}"},
-                            {"text": "这张图片里是什么物体？只回答物体名称，不要多余的话。"}
+                            {"text": "这张图片里是什么物体？只回答物体名称。"}
                         ]
                     }
                 ]
@@ -42,13 +42,16 @@ def recognize_image(image):
         result = response.json()
         
         if "output" in result:
-            text = result["output"]["choices"][0]["message"]["content"]
-            return text.strip(), None
-        else:
-            return None, str(result)
+            choices = result["output"].get("choices", [])
+            if choices:
+                text = choices[0].get("message", {}).get("content", "")
+                if isinstance(text, list):
+                    text = str(text[0]) if text else "未知"
+                return str(text).strip(), None
+        
+        return None, str(result)
     except Exception as e:
         return None, str(e)
-
 def match_garbage(item_name):
     """匹配垃圾分类"""
     name = item_name.lower()
